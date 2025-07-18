@@ -270,15 +270,13 @@ L.BrowserPrint = L.Class.extend({
 
 		this._map.fire(L.BrowserPrint.Event.PrintStart, { printLayer: origins.printLayer, printMap: overlay.map, printObjects: overlay.objects });
 
-		if (options.invalidateBounds) {
+		if(options.exactArea){
+			overlay.map.setView(origins.bounds.getCenter(), this._map.getZoom(), { animate: false, pan: false });
+		} else if (options.invalidateBounds) {
 			overlay.map.fitBounds(origins.bounds, overlay.map.options);
 			overlay.map.invalidateSize({reset: true, animate: false, pan: false});
 		} else {
-			if(options.exactArea){
-				overlay.map.setView(origins.bounds.getCenter(), this._map.getZoom(), { animate: false, pan: false });
-			} else {
-				overlay.map.setView(this._map.getCenter(), this._map.getZoom(), { animate: false, pan: false });
-			}
+			overlay.map.setView(this._map.getCenter(), this._map.getZoom(), { animate: false, pan: false });
 		}
 
 		if(options.zoom){
@@ -406,8 +404,8 @@ L.BrowserPrint = L.Class.extend({
 		var printStyleSheet = document.createElement('style');
 		printStyleSheet.className = "leaflet-browser-print-css";
 		printStyleSheet.setAttribute('type', 'text/css');
-		printStyleSheet.innerText = " .leaflet-print-overlay .grid-print-container { transform: scale(var(--exact-print-zoom)); transform-origin: top left; }";
-		printStyleSheet.innerText += " .leaflet-print-overlay .leaflet-control-attribution { transform: scale(calc(1/var(--exact-print-zoom))); transform-origin: bottom right; }";
+		printStyleSheet.innerText = " .leaflet-print-overlay .grid-print-container { zoom: var(--exact-print-zoom) }";
+		printStyleSheet.innerText += " .leaflet-print-overlay .leaflet-control-container { zoom: calc(1 / var(--exact-print-zoom)) }";
 
 		printStyleSheet.innerHTML += ' @media print { .leaflet-popup-content-wrapper, .leaflet-popup-tip { box-shadow: none; }';
 		printStyleSheet.innerHTML += ' .leaflet-browser-print--manualMode-button { display: none; }';
