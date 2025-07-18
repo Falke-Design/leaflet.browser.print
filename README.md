@@ -203,6 +203,7 @@ L.BrowserPrint.Mode.Landscape(pageSize,options);
 | scale         | Double       | 1             | Scale the map. Shows all bigger or smaller, with `1` the map looks normal |
 | header        | Object       |               | Adds a header section to the top of the page. For the available options look in the "Header / Footer Options" table below |
 | footer        | Object       |               | Adds a footer section to the bottom of the page. For the available options look in the "Header / Footer Options" table below |
+| exactArea     | Boolean      |               | Prints only the selected area without zooming on the map. |
 
 #### Header / Footer Options
 | Option        | Type         | Default      | Description   |

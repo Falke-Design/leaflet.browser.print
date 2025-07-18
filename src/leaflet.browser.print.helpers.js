@@ -4,6 +4,14 @@
 **/
 
 L.BrowserPrint.Helper = {
+	pxToMm: function (px) {
+		return (px / (96 / 2.54)) * 10;
+	},
+
+	mmToPx: function (mm) {
+		return (mm / 10) * (96 / 2.54);
+	},
+
 	getPageMargin: function (mode,type) {
 		var margin = mode.options.margin;
 		var size = this.getPaperSize(mode);
@@ -47,6 +55,12 @@ L.BrowserPrint.Helper = {
 		};
 	},
 	getPaperSize: function (mode) {
+		if(mode.Width){
+			return {
+				Width: mode.Width,
+				Height: mode.Height,
+			};
+		}
 		if (mode.options.pageSeries) {
 			var series = L.BrowserPrint.Size[mode.options.pageSeries];
 			var w = series.Width;
@@ -78,8 +92,18 @@ L.BrowserPrint.Helper = {
 	},
 	getSize: function (mode, orientaion = 'Portrait') {
 		var size = this.getPaperSize(mode);
-		var pageMargin = this.getPageMargin(mode, 0);
-
+		var pageMargin;
+		if(mode.Width){
+			pageMargin = {
+				top: 0,
+				right: 0,
+				bottom: 0,
+				left: 0
+			};
+		}
+		else{
+			pageMargin = this.getPageMargin(mode, 0);
+		}
 		var topbottom = orientaion === 'Portrait' ? parseFloat(pageMargin.top) + parseFloat(pageMargin.bottom) : parseFloat(pageMargin.left) + parseFloat(pageMargin.right);
 		var leftright = orientaion === 'Portrait' ? parseFloat(pageMargin.left) + parseFloat(pageMargin.right) : parseFloat(pageMargin.top) + parseFloat(pageMargin.bottom);
 

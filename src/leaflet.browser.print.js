@@ -191,6 +191,12 @@ L.BrowserPrint = L.Class.extend({
 		mapContainer.style.height =  "calc("+(pageOrientation === "Landscape" ? size.Width : size.Height) + " - "+header+" - " +footer+ ")";
 	},
 
+	_setupPrintPageZoom: function(pagesContainer, size, pageSize) {
+		var zoom = Math.min(parseFloat(pageSize.Height) / parseFloat(size.Height), parseFloat(pageSize.Width) / parseFloat(size.Width));
+
+		pagesContainer.style.setProperty('--exact-print-zoom', zoom);
+	},
+
 	_printCancel: function() {
 		clearInterval(self.printInterval);
 		L.DomEvent.off(document,'keyup',this._keyUpCancel,this);
@@ -268,7 +274,11 @@ L.BrowserPrint = L.Class.extend({
 			overlay.map.fitBounds(origins.bounds, overlay.map.options);
 			overlay.map.invalidateSize({reset: true, animate: false, pan: false});
 		} else {
-			overlay.map.setView(this._map.getCenter(), this._map.getZoom());
+			if(options.exactArea){
+				overlay.map.setView(origins.bounds.getCenter(), this._map.getZoom(), { animate: false, pan: false });
+			} else {
+				overlay.map.setView(this._map.getCenter(), this._map.getZoom(), { animate: false, pan: false });
+			}
 		}
 
 		if(options.zoom){
@@ -396,7 +406,10 @@ L.BrowserPrint = L.Class.extend({
 		var printStyleSheet = document.createElement('style');
 		printStyleSheet.className = "leaflet-browser-print-css";
 		printStyleSheet.setAttribute('type', 'text/css');
-		printStyleSheet.innerHTML = ' @media print { .leaflet-popup-content-wrapper, .leaflet-popup-tip { box-shadow: none; }';
+		printStyleSheet.innerText = " .leaflet-print-overlay .grid-print-container { transform: scale(var(--exact-print-zoom)); transform-origin: top left; }";
+		printStyleSheet.innerText += " .leaflet-print-overlay .leaflet-control-attribution { transform: scale(calc(1/var(--exact-print-zoom))); transform-origin: bottom right; }";
+
+		printStyleSheet.innerHTML += ' @media print { .leaflet-popup-content-wrapper, .leaflet-popup-tip { box-shadow: none; }';
 		printStyleSheet.innerHTML += ' .leaflet-browser-print--manualMode-button { display: none; }';
 		printStyleSheet.innerHTML += ' * { -webkit-print-color-adjust: exact!important; printer-colors: exact!important; color-adjust: exact!important; }';
 
@@ -434,7 +447,24 @@ L.BrowserPrint = L.Class.extend({
 
 		var pageSize = options.pageSize;
 		var pageMargin = L.BrowserPrint.Helper.getPageMargin(printMode,"mm");
-		var printSize = L.BrowserPrint.Helper.getSize(printMode,pageOrientation);
+
+		var tempPrintMode = {...printMode};
+		if(options.exactArea){
+			var heightPx = this._map.latLngToContainerPoint(origins.bounds.getSouthWest()).distanceTo(
+				this._map.latLngToContainerPoint(origins.bounds.getSouthEast())
+			);
+
+			var widthPx = this._map.latLngToContainerPoint(origins.bounds.getNorthWest()).distanceTo(
+				this._map.latLngToContainerPoint(origins.bounds.getSouthWest())
+			);
+
+			var heightMm = L.BrowserPrint.Helper.pxToMm(heightPx);
+			var widthMm = L.BrowserPrint.Helper.pxToMm(widthPx);
+
+			tempPrintMode.Width = options.orientation === 'Portrait' ? heightMm : widthMm;
+			tempPrintMode.Height = options.orientation === 'Portrait' ? widthMm : heightMm;
+		}
+		var printSize = L.BrowserPrint.Helper.getSize(tempPrintMode, pageOrientation);
 		var rotate = options.rotate;
 		var scale = options.scale;
 
@@ -460,6 +490,9 @@ L.BrowserPrint = L.Class.extend({
 		gridContainer.style.width = "100%";
 		gridContainer.style.display = "grid";
 		this._setupPrintMapHeight(gridContainer, printSize, pageOrientation, options);
+		if(options.exactArea){
+			this._setupPrintPageZoom(gridContainer, printSize, L.BrowserPrint.Helper.getSize(printMode, pageOrientation));
+		}
 
 		if (this.options.contentSelector) {
 			var content = document.querySelectorAll(this.options.contentSelector);
